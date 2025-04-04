@@ -72,6 +72,22 @@
         #play-button:hover {
             background-color: darkred;
         }
+        #play-db-button {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 3;
+            display: none; /* Caché par défaut */
+        }
+        #play-db-button:hover {
+            background-color: darkgreen;
+        }
 
         /* Forcer le mode paysage sur mobile */
         @media only screen and (orientation: portrait) {
@@ -91,13 +107,13 @@
                 text-align: center;
                 z-index: 9999;
             }
-            #frame, #marquee, #play-button {
+            #frame, #marquee, #play-button, #play-db-button {
                 display: none; /* Masquer le contenu en mode portrait */
             }
         }
 
         /* Ajustements pour mobile (écrans de petite taille) */
-        @media only screen and (max-width: 1768px) {
+        @media only screen and (max-width: 1024px) {
             #background-image {
                 width: 85%;
                 height: 85%;
@@ -122,7 +138,8 @@
     <div id="marquee"></div>
     <audio id="background-audio" src="La_minute957.wav" preload="auto"></audio>
     <audio id="db-audio" src="db.mp3" preload="auto"></audio>
-    <button id="play-button" onclick="playSequence()">Tester l'audio v1.05</button>
+    <button id="play-button" onclick="playFirstAudio()">Tester l'audio v1.06</button>
+    <button id="play-db-button" onclick="document.getElementById('db-audio').play()">Jouer db.mp3</button>
 
     <script>
         const startDate = new Date('2024-01-01T00:00:00');
@@ -153,29 +170,18 @@
 
         const backgroundAudio = document.getElementById('background-audio');
         const dbAudio = document.getElementById('db-audio');
+        const playDbButton = document.getElementById('play-db-button');
 
-        function playSequence() {
-            // Réinitialiser les deux fichiers audio
-            backgroundAudio.currentTime = 0;
-            dbAudio.currentTime = 0;
-
-            // Jouer le premier fichier et attendre qu'il finisse
+        function playFirstAudio() {
+            backgroundAudio.currentTime = 0; // Réinitialiser au début
             backgroundAudio.play()
                 .then(() => {
-                    return new Promise(resolve => {
-                        backgroundAudio.onended = resolve;
-                    });
-                })
-                .then(() => {
-                    // Attendre 2 secondes après la fin du premier fichier
-                    return new Promise(resolve => setTimeout(resolve, 2000));
-                })
-                .then(() => {
-                    // Jouer le deuxième fichier dans le même contexte d'interaction
-                    return dbAudio.play();
+                    backgroundAudio.onended = () => {
+                        playDbButton.style.display = 'block'; // Afficher le bouton pour db.mp3 après la fin
+                    };
                 })
                 .catch(error => {
-                    console.log("Erreur lors de la lecture audio : ", error);
+                    console.log("Erreur lors de la lecture de La_minute957.wav : ", error);
                 });
         }
 
