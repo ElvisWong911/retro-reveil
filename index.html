@@ -101,15 +101,13 @@
             #background-image {
                 width: 75%; /* Réduction de 25% par rapport à 100% */
                 height: 75%; /* Réduction de 25% par rapport à 100% */
-                top: 0; /* Aligner en haut */
-                left: 50%; /* Positionner la gauche à 50% de la largeur */
-                transform: translateX(-50%); /* Déplacer de -50% de sa largeur pour centrer horizontalement */
+                margin: auto; /* Centrer l'image réduite */
             }
             #timer {
-                font-size: 60px; /* Réduction de 25% : 80px * 0.75 = 60px */
+                font-size: 40px; /* Réduction supplémentaire pour mobile (au lieu de 60px) */
             }
             #marquee {
-                font-size: 39px; /* Réduction de 25% : 52px * 0.75 = 39px */
+                font-size: 30px; /* Réduction supplémentaire pour mobile (au lieu de 39px) */
             }
         }
     </style>
@@ -121,7 +119,7 @@
     </div>
     <div id="marquee"></div>
     <audio id="background-audio" src="La_minute957.wav" preload="auto"></audio>
-    <button id="play-button" onclick="document.getElementById('background-audio').play()">Tester l'audio</button>
+    <button id="play-button" onclick="document.getElementById('background-audio').play()">Tester l'audio v1</button>
 
     <script>
         const startDate = new Date('2024-01-01T00:00:00');
@@ -163,5 +161,6 @@
             });
         }
     </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b3346a3d055b6a',t:'MTc0Mzc5NDg2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
