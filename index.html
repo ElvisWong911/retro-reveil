@@ -97,19 +97,19 @@
         }
 
         /* Ajustements pour mobile (écrans de petite taille) */
-        @media only screen and (max-width: 1768px) {
+        @media only screen and (max-width: 1024px) {
             #background-image {
-                width: 85%; /* Réduction de 15% par rapport à 100% */
-                height: 85%; /* Réduction de 15% par rapport à 100% */
-                top: 0; /* Aligner en haut */
-                left: 50%; /* Positionner au centre horizontalement */
-                transform: translateX(-50%); /* Déplacer de -50% de sa largeur pour centrer */
+                width: 85%;
+                height: 85%;
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%);
             }
             #timer {
-                font-size: 40px; /* Taille ajustée pour mobile */
+                font-size: 40px;
             }
             #marquee {
-                font-size: 30px; /* Taille ajustée pour mobile */
+                font-size: 30px;
             }
         }
     </style>
@@ -121,8 +121,8 @@
     </div>
     <div id="marquee"></div>
     <audio id="background-audio" src="La_minute957.wav" preload="auto"></audio>
-    <audio id="db-audio" src="db.mp3" preload="auto"></audio> <!-- Ajout de db.mp3 -->
-    <button id="play-button" onclick="document.getElementById('background-audio').play()">Tester l'audio v1.03</button>
+    <audio id="db-audio" src="db.mp3" preload="auto"></audio>
+    <button id="play-button" onclick="playSequence()">Tester l'audio v1.04</button>
 
     <script>
         const startDate = new Date('2024-01-01T00:00:00');
@@ -151,15 +151,28 @@
         setInterval(updateTimer, 1000);
         scrollText();
 
-        // Gestion de la lecture séquentielle des fichiers audio
         const backgroundAudio = document.getElementById('background-audio');
         const dbAudio = document.getElementById('db-audio');
 
-        backgroundAudio.addEventListener('ended', () => {
-            setTimeout(() => {
-                dbAudio.play(); // Joue db.mp3 après une pause de 2 secondes
-            }, 2000); // 2000 ms = 2 secondes
-        });
+        function playSequence() {
+            // Réinitialiser les deux fichiers audio au début
+            backgroundAudio.currentTime = 0;
+            dbAudio.currentTime = 0;
+            
+            // Jouer le premier fichier
+            backgroundAudio.play().then(() => {
+                // Quand le premier fichier finit
+                backgroundAudio.onended = () => {
+                    setTimeout(() => {
+                        dbAudio.play().catch(error => {
+                            console.log("Erreur lors de la lecture de db.mp3 : ", error);
+                        });
+                    }, 2000); // Pause de 2 secondes
+                };
+            }).catch(error => {
+                console.log("Erreur lors de la lecture de La_minute957.wav : ", error);
+            });
+        }
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
