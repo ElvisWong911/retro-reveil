@@ -97,7 +97,7 @@
         }
 
         /* Ajustements pour mobile (écrans de petite taille) */
-        @media only screen and (max-width: 1024px) {
+        @media only screen and (max-width: 1768px) {
             #background-image {
                 width: 85%;
                 height: 85%;
@@ -122,7 +122,7 @@
     <div id="marquee"></div>
     <audio id="background-audio" src="La_minute957.wav" preload="auto"></audio>
     <audio id="db-audio" src="db.mp3" preload="auto"></audio>
-    <button id="play-button" onclick="playSequence()">Tester l'audio v1.04</button>
+    <button id="play-button" onclick="playSequence()">Tester l'audio v1.05</button>
 
     <script>
         const startDate = new Date('2024-01-01T00:00:00');
@@ -155,23 +155,28 @@
         const dbAudio = document.getElementById('db-audio');
 
         function playSequence() {
-            // Réinitialiser les deux fichiers audio au début
+            // Réinitialiser les deux fichiers audio
             backgroundAudio.currentTime = 0;
             dbAudio.currentTime = 0;
-            
-            // Jouer le premier fichier
-            backgroundAudio.play().then(() => {
-                // Quand le premier fichier finit
-                backgroundAudio.onended = () => {
-                    setTimeout(() => {
-                        dbAudio.play().catch(error => {
-                            console.log("Erreur lors de la lecture de db.mp3 : ", error);
-                        });
-                    }, 2000); // Pause de 2 secondes
-                };
-            }).catch(error => {
-                console.log("Erreur lors de la lecture de La_minute957.wav : ", error);
-            });
+
+            // Jouer le premier fichier et attendre qu'il finisse
+            backgroundAudio.play()
+                .then(() => {
+                    return new Promise(resolve => {
+                        backgroundAudio.onended = resolve;
+                    });
+                })
+                .then(() => {
+                    // Attendre 2 secondes après la fin du premier fichier
+                    return new Promise(resolve => setTimeout(resolve, 2000));
+                })
+                .then(() => {
+                    // Jouer le deuxième fichier dans le même contexte d'interaction
+                    return dbAudio.play();
+                })
+                .catch(error => {
+                    console.log("Erreur lors de la lecture audio : ", error);
+                });
         }
 
         document.addEventListener('keydown', (event) => {
