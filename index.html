@@ -99,8 +99,8 @@
         /* Ajustements pour mobile (écrans de petite taille) */
         @media only screen and (max-width: 1768px) {
             #background-image {
-                width: 85%; /* Réduction de 25% par rapport à 100% */
-                height: 85%; /* Réduction de 25% par rapport à 100% */
+                width: 85%; /* Réduction de 15% par rapport à 100% */
+                height: 85%; /* Réduction de 15% par rapport à 100% */
                 top: 0; /* Aligner en haut */
                 left: 50%; /* Positionner au centre horizontalement */
                 transform: translateX(-50%); /* Déplacer de -50% de sa largeur pour centrer */
@@ -121,7 +121,8 @@
     </div>
     <div id="marquee"></div>
     <audio id="background-audio" src="La_minute957.wav" preload="auto"></audio>
-    <button id="play-button" onclick="document.getElementById('background-audio').play()">Tester l'audio v1.02</button>
+    <audio id="db-audio" src="db.mp3" preload="auto"></audio> <!-- Ajout de db.mp3 -->
+    <button id="play-button" onclick="document.getElementById('background-audio').play()">Tester l'audio v1.03</button>
 
     <script>
         const startDate = new Date('2024-01-01T00:00:00');
@@ -150,6 +151,16 @@
         setInterval(updateTimer, 1000);
         scrollText();
 
+        // Gestion de la lecture séquentielle des fichiers audio
+        const backgroundAudio = document.getElementById('background-audio');
+        const dbAudio = document.getElementById('db-audio');
+
+        backgroundAudio.addEventListener('ended', () => {
+            setTimeout(() => {
+                dbAudio.play(); // Joue db.mp3 après une pause de 2 secondes
+            }, 2000); // 2000 ms = 2 secondes
+        });
+
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 window.close();
@@ -164,5 +175,6 @@
         }
     </script>
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b3442f7f34bd14',t:'MTc0Mzc5NTUwOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b391307b97675b',t:'MTc0Mzc5ODY2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
