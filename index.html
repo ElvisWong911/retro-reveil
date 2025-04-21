@@ -266,12 +266,26 @@
             color: white;
             border: none;
             cursor: pointer;
-            z-index: 1002;
-            display: block; /* Visible par défaut */
-            visibility: visible;
+            z-index: 1003;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
         #enable-sound-button:hover {
             background-color: darkblue;
+        }
+        #audio-warning {
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: red;
+            color: white;
+            font-size: 16px;
+            z-index: 1004;
+            display: none;
         }
         @media only screen and (orientation: portrait) {
             body::before {
@@ -290,7 +304,7 @@
                 text-align: center;
                 z-index: 9999;
             }
-            #frame, #marquee, #play-button, #play-db-button, .flip-clock, .days-counter, #intro-video, #enable-sound-button {
+            #frame, #marquee, #play-button, #play-db-button, .flip-clock, .days-counter, #intro-video, #enable-sound-button, #audio-warning {
                 display: none;
             }
             .portrait-warning {
@@ -323,6 +337,10 @@
                 left: calc(10px + 10vw);
                 padding: 0.5vw;
             }
+            #enable-sound-button {
+                font-size: 18px;
+                padding: 12px 25px;
+            }
         }
         @media only screen and (max-height: 600px) {
             .flip-clock {
@@ -354,6 +372,7 @@
     <button id="play-db-button" onclick="document.getElementById('db-audio').play()">Ma Nation !</button>
     <video id="intro-video" src="countdown.mp4" preload="auto" playsinline></video>
     <button id="enable-sound-button" onclick="enableVideoSound()">Activer le son</button>
+    <div id="audio-warning">Aucune piste audio détectée dans la vidéo</div>
 
     <!-- Days Since Jan 1, 2024 -->
     <div class="days-counter">
@@ -455,18 +474,15 @@
             if (introVideo && enableSoundButton) {
                 enableSoundButton.style.display = 'none';
                 introVideo.muted = false;
-                if (introVideo.paused) {
-                    introVideo.play()
-                        .then(() => {
-                            console.log("Lecture de la vidéo countdown.mp4 avec son réussie après activation manuelle");
-                        })
-                        .catch(error => {
-                            console.error("Erreur lors de la lecture avec son : ", error);
-                            startApplication();
-                        });
-                } else {
-                    console.log("Son activé pour la vidéo countdown.mp4 en cours de lecture");
-                }
+                introVideo.currentTime = 0;
+                introVideo.play()
+                    .then(() => {
+                        console.log("Lecture de la vidéo countdown.mp4 avec son réussie");
+                    })
+                    .catch(error => {
+                        console.error("Erreur lors de la lecture avec son : ", error);
+                        startApplication();
+                    });
             } else {
                 console.error("Élément vidéo ou bouton non trouvé.");
                 startApplication();
@@ -476,6 +492,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const introVideo = document.getElementById('intro-video');
             const enableSoundButton = document.getElementById('enable-sound-button');
+            const audioWarning = document.getElementById('audio-warning');
             const frame = document.getElementById('frame');
             const marquee = document.getElementById('marquee');
             const playButton = document.getElementById('play-button');
@@ -496,6 +513,7 @@
                     enableSoundButton.style.display = 'none';
                     enableSoundButton.style.visibility = 'hidden';
                 }
+                if (audioWarning) audioWarning.style.display = 'none';
                 if (frame) frame.style.display = 'flex';
                 if (marquee) marquee.style.display = 'block';
                 if (playButton) playButton.style.display = 'block';
@@ -513,43 +531,46 @@
             if (flipClock) flipClock.style.display = 'none';
             if (daysCounter) daysCounter.style.display = 'none';
 
+            // Vérifier la visibilité du bouton
+            if (enableSoundButton) {
+                const rect = enableSoundButton.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) {
+                    console.error("Bouton 'Activer le son' invisible (dimensions 0)");
+                } else {
+                    console.log("Bouton 'Activer le son' visible, dimensions :", rect);
+                }
+            }
+
             // Tenter la lecture automatique de la vidéo
             if (introVideo) {
                 introVideo.style.display = 'block';
                 introVideo.muted = true;
                 // Vérifier la piste audio
                 introVideo.addEventListener('loadedmetadata', () => {
-                    if (!introVideo.mozHasAudio && !introVideo.webkitAudioDecodedByteCount && introVideo.audioTracks?.length === 0) {
+                    const hasAudio = introVideo.mozHasAudio || 
+                                    introVideo.webkitAudioDecodedByteCount > 0 || 
+                                    (introVideo.audioTracks && introVideo.audioTracks.length > 0);
+                    if (!hasAudio) {
                         console.warn("Aucune piste audio détectée dans countdown.mp4");
+                        if (audioWarning) audioWarning.style.display = 'block';
                     } else {
                         console.log("Piste audio détectée dans countdown.mp4");
                     }
                 });
+                introVideo.addEventListener('canplay', () => {
+                    console.log("Vidéo prête à jouer");
+                });
+                introVideo.addEventListener('touchstart', () => {
+                    console.log("Interaction tactile détectée sur la vidéo");
+                });
                 introVideo.play()
                     .then(() => {
                         console.log("Lecture automatique de la vidéo countdown.mp4 sans son réussie");
-                        if (enableSoundButton) {
-                            console.log("Affichage du bouton Activer le son");
-                            enableSoundButton.style.display = 'block';
-                            enableSoundButton.style.visibility = 'visible';
-                        }
                     })
                     .catch(error => {
                         console.error("Échec de la lecture automatique : ", error);
-                        if (enableSoundButton) {
-                            console.log("Affichage du bouton Activer le son après échec");
-                            enableSoundButton.style.display = 'block';
-                            enableSoundButton.style.visibility = 'visible';
-                        }
+                        startApplication();
                     });
-
-                introVideo.addEventListener('playing', () => {
-                    if (enableSoundButton) {
-                        console.log("Vidéo en cours de lecture, forcer l'affichage du bouton");
-                        enableSoundButton.style.display = 'block';
-                        enableSoundButton.style.visibility = 'visible';
-                    }
-                });
 
                 introVideo.onended = () => {
                     console.log("Vidéo countdown.mp4 terminée via onended");
@@ -689,23 +710,26 @@
                 const warning = document.querySelector('.portrait-warning');
                 const introVideo = document.getElementById('intro-video');
                 const enableSoundButton = document.getElementById('enable-sound-button');
+                const audioWarning = document.getElementById('audio-warning');
 
                 if (window.innerHeight > window.innerWidth) {
                     if (flipClock) flipClock.style.display = 'none';
                     if (daysCounter) daysCounter.style.display = 'none';
                     if (introVideo) introVideo.style.display = 'none';
                     if (enableSoundButton) enableSoundButton.style.display = 'none';
+                    if (audioWarning) audioWarning.style.display = 'none';
                     if (warning) warning.style.display = 'flex';
                 } else {
                     if (warning) warning.style.display = 'none';
                     if (introVideo && !introVideo.ended) {
                         introVideo.style.display = 'block';
                         introVideo.play().catch(() => {
-                            if (enableSoundButton) {
-                                enableSoundButton.style.display = 'block';
-                                enableSoundButton.style.visibility = 'visible';
-                            }
+                            console.log("Échec de la relecture en mode paysage");
                         });
+                        if (enableSoundButton) {
+                            enableSoundButton.style.display = 'block';
+                            enableSoundButton.style.visibility = 'visible';
+                        }
                     } else {
                         if (flipClock) flipClock.style.display = 'flex';
                         if (daysCounter) daysCounter.style.display = 'flex';
