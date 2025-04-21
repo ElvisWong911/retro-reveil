@@ -1,0 +1,707 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Réveil Rétro HD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            background-image: url('panneau_galv.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #frame {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #background-image {
+            width: 90%;
+            height: 90%;
+            object-fit: cover;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+        #marquee {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background-color: yellow;
+            color: black;
+            font-size: 52px;
+            font-style: italic;
+            white-space: nowrap;
+            overflow: hidden;
+            z-index: 2;
+        }
+        .marquee-content {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee-scroll 1200s linear infinite;
+        }
+        @keyframes marquee-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+        #marquee:hover .marquee-content {
+            animation-play-state: paused;
+        }
+        #play-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 3;
+        }
+        #play-button:hover {
+            background-color: darkred;
+        }
+        #play-db-button {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 3;
+            display: none;
+        }
+        #play-db-button:hover {
+            background-color: darkgreen;
+        }
+        .flip-clock {
+            position: absolute;
+            top: 70vh;
+            right: calc(10px + 10vw);
+            display: flex;
+            gap: 0.5vw;
+            background-color: #333;
+            background-image: url('fibre_carbo_bleu.jpg');
+            background-size: cover;
+            padding: 1vw;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 3;
+            transform: scale(0.9);
+            transform-origin: top right;
+        }
+        .days-counter {
+            position: absolute;
+            top: 70vh;
+            left: calc(10px + 10vw);
+            display: flex;
+            gap: 0.5vw;
+            background-color: #333;
+            background-image: url('fibre_carbo_bleu.jpg');
+            background-size: cover;
+            padding: 1vw;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 3;
+            transform: scale(0.9);
+            transform-origin: top left;
+        }
+        .flip-unit {
+            position: relative;
+            width: 10vw;
+            height: 14vw;
+            max-width: 60px;
+            max-height: 80px;
+            min-width: 40px;
+            min-height: 50px;
+            perspective: 300px;
+            overflow: hidden;
+        }
+        .flip-card {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-style: preserve-3d;
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .flip-card.flipped {
+            transform: rotateX(180deg);
+        }
+        .lamelle {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            color: #000;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            background-image: url('alu_brosse.jpg');
+            background-size: cover;
+            border: 1px solid #444;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+            backface-visibility: hidden;
+        }
+        .lamelle.front {
+            transform: rotateX(0deg);
+        }
+        .lamelle.back {
+            transform: rotateX(180deg);
+        }
+        .separator {
+            font-size: clamp(1.2rem, 3.5vw, 2.5rem);
+            color: white;
+            line-height: clamp(50px, 14vw, 80px);
+            display: flex;
+            align-items: center;
+        }
+        .am-pm, .jours-label {
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            color: white;
+            line-height: clamp(50px, 14vw, 80px);
+            margin-left: 1vw;
+            display: flex;
+            align-items: center;
+        }
+        .portrait-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            font-size: 1.5rem;
+            text-align: center;
+            padding: 20px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #intro-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1001;
+            display: none;
+        }
+        #enable-sound-button {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: blue;
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 1002;
+            display: none;
+        }
+        #enable-sound-button:hover {
+            background-color: darkblue;
+        }
+        @media only screen and (orientation: portrait) {
+            body::before {
+                content: "Veuillez tourner votre appareil en mode paysage pour une meilleure expérience.";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                color: white;
+                font-size: 24px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                z-index: 9999;
+            }
+            #frame, #marquee, #play-button, #play-db-button, .flip-clock, .days-counter, #intro-video, #enable-sound-button {
+                display: none;
+            }
+            .portrait-warning {
+                display: flex;
+            }
+        }
+        @media only screen and (max-width: 1024px) {
+            #background-image {
+                width: 87.975%;
+                height: 87.975%;
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            #marquee {
+                font-size: 30px;
+            }
+            .marquee-content {
+                animation-duration: 800s;
+            }
+            .flip-clock {
+                transform: scale(0.6);
+                top: 75vh;
+                right: calc(10px + 10vw);
+                padding: 0.5vw;
+            }
+            .days-counter {
+                transform: scale(0.6);
+                top: 75vh;
+                left: calc(10px + 10vw);
+                padding: 0.5vw;
+            }
+        }
+        @media only screen and (max-height: 600px) {
+            .flip-clock {
+                top: 65vh;
+                transform: scale(0.56);
+            }
+            .days-counter {
+                top: 65vh;
+                transform: scale(0.56);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Assurez-vous que ces fichiers sont dans le même dossier : -->
+    <!-- Images : sanscontrat.png, panneau_galv.jpg, fibre_carbo_bleu.jpg, alu_brosse.jpg -->
+    <!-- Audio : La_minute957.wav, db.mp3, Clock_Tick.mp3 -->
+    <!-- Vidéo : countdown.mp4 -->
+    <div id="frame">
+        <img id="background-image" src="sanscontrat.png" alt="Réveil Rétro">
+    </div>
+    <div id="marquee">
+        <div class="marquee-content"></div>
+    </div>   
+    <audio id="background-audio" src="La_minute957.wav" preload="auto"></audio>
+    <audio id="db-audio" src="db.mp3" preload="auto"></audio>
+    <audio id="click-sound" src="Clock_Tick.mp3"></audio>
+    <button id="play-button" onclick="playFirstAudio()">Tester l'audio v957.0</button>
+    <button id="play-db-button" onclick="document.getElementById('db-audio').play()">Ma Nation !</button>
+    <video id="intro-video" src="countdown.mp4" preload="auto"></video>
+    <button id="enable-sound-button" onclick="enableVideoSound()">Activer le son</button>
+
+    <!-- Days Since Jan 1, 2024 -->
+    <div class="days-counter">
+        <div class="flip-unit" id="days-hundreds">
+            <div class="flip-card">
+                <div class="lamelle front" id="days-hundreds-front">0</div>
+                <div class="lamelle back" id="days-hundreds-back">0</div>
+            </div>
+        </div>
+        <div class="flip-unit" id="days-tens">
+            <div class="flip-card">
+                <div class="lamelle front" id="days-tens-front">0</div>
+                <div class="lamelle back" id="days-tens-back">0</div>
+            </div>
+        </div>
+        <div class="flip-unit" id="days-ones">
+            <div class="flip-card">
+                <div class="lamelle front" id="days-ones-front">0</div>
+                <div class="lamelle back" id="days-ones-back">0</div>
+            </div>
+        </div>
+        <div class="jours-label">Jours</div>
+    </div>
+
+    <!-- Flip Clock -->
+    <div class="flip-clock">
+        <div class="flip-unit" id="hours-tens">
+            <div class="flip-card">
+                <div class="lamelle front" id="hours-tens-front">0</div>
+                <div class="lamelle back" id="hours-tens-back">0</div>
+            </div>
+        </div>
+        <div class="flip-unit" id="hours-ones">
+            <div class="flip-card">
+                <div class="lamelle front" id="hours-ones-front">0</div>
+                <div class="lamelle back" id="hours-ones-back">0</div>
+            </div>
+        </div>
+        <div class="separator">:</div>
+        <div class="flip-unit" id="minutes-tens">
+            <div class="flip-card">
+                <div class="lamelle front" id="minutes-tens-front">0</div>
+                <div class="lamelle back" id="minutes-tens-back">0</div>
+            </div>
+        </div>
+        <div class="flip-unit" id="minutes-ones">
+            <div class="flip-card">
+                <div class="lamelle front" id="minutes-ones-front">0</div>
+                <div class="lamelle back" id="minutes-ones-back">0</div>
+            </div>
+        </div>
+        <div class="separator">:</div>
+        <div class="flip-unit" id="seconds-tens">
+            <div class="flip-card">
+                <div class="lamelle front" id="seconds-tens-front">0</div>
+                <div class="lamelle back" id="seconds-tens-back">0</div>
+            </div>
+        </div>
+        <div class="flip-unit" id="seconds-ones">
+            <div class="flip-card">
+                <div class="lamelle front" id="seconds-ones-front">0</div>
+                <div class="lamelle back" id="seconds-ones-back">0</div>
+            </div>
+        </div>
+        <div class="am-pm" id="am-pm">AM</div>
+    </div>
+
+    <!-- Portrait Warning -->
+    <div class="portrait-warning">
+        <p>Veuillez tourner votre appareil en mode paysage pour voir l'horloge.</p>
+    </div>
+
+    <script>
+        function playFirstAudio() {
+            const backgroundAudio = document.getElementById('background-audio');
+            const playDbButton = document.getElementById('play-db-button');
+            if (backgroundAudio) {
+                backgroundAudio.currentTime = 0;
+                backgroundAudio.play()
+                    .then(() => {
+                        console.log("Lecture de l'audio La_minute957.wav réussie");
+                        backgroundAudio.onended = () => {
+                            if (playDbButton) {
+                                playDbButton.style.display = 'block';
+                            }
+                        };
+                    })
+                    .catch(error => {
+                        console.error("Erreur lors de la lecture de La_minute957.wav : ", error);
+                    });
+            } else {
+                console.error("Élément audio 'background-audio' non trouvé.");
+            }
+        }
+
+        function enableVideoSound() {
+            const introVideo = document.getElementById('intro-video');
+            const enableSoundButton = document.getElementById('enable-sound-button');
+            if (introVideo && enableSoundButton) {
+                enableSoundButton.style.display = 'none';
+                introVideo.muted = false;
+                if (introVideo.paused) {
+                    introVideo.play()
+                        .then(() => {
+                            console.log("Lecture de la vidéo countdown.mp4 avec son réussie après activation manuelle");
+                        })
+                        .catch(error => {
+                            console.error("Erreur lors de la lecture après activation du son : ", error);
+                            startApplication();
+                        });
+                } else {
+                    console.log("Son activé pour la vidéo countdown.mp4 en cours de lecture");
+                }
+            } else {
+                console.error("Élément vidéo ou bouton non trouvé.");
+                startApplication();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const introVideo = document.getElementById('intro-video');
+            const enableSoundButton = document.getElementById('enable-sound-button');
+            const frame = document.getElementById('frame');
+            const marquee = document.getElementById('marquee');
+            const playButton = document.getElementById('play-button');
+            const playDbButton = document.getElementById('play-db-button');
+            const flipClock = document.querySelector('.flip-clock');
+            const daysCounter = document.querySelector('.days-counter');
+
+            function startApplication() {
+                console.log("Démarrage de l'application");
+                // Forcer le masquage de la vidéo
+                if (introVideo) {
+                    introVideo.style.display = 'none';
+                    introVideo.pause();
+                    introVideo.currentTime = 0;
+                }
+                if (enableSoundButton) enableSoundButton.style.display = 'none';
+                if (frame) frame.style.display = 'flex';
+                if (marquee) marquee.style.display = 'block';
+                if (playButton) playButton.style.display = 'block';
+                if (flipClock) flipClock.style.display = 'flex';
+                if (daysCounter) daysCounter.style.display = 'flex';
+                updateClock();
+                setInterval(updateClock, 1000);
+            }
+
+            // Masquer les éléments au démarrage
+            if (frame) frame.style.display = 'none';
+            if (marquee) marquee.style.display = 'none';
+            if (playButton) playButton.style.display = 'none';
+            if (playDbButton) playDbButton.style.display = 'none';
+            if (flipClock) flipClock.style.display = 'none';
+            if (daysCounter) daysCounter.style.display = 'none';
+
+            // Tenter la lecture automatique de la vidéo
+            function tryPlayVideo() {
+                if (introVideo) {
+                    introVideo.style.display = 'block';
+                    // Essayer avec le son
+                    introVideo.muted = false;
+                    introVideo.play()
+                        .then(() => {
+                            console.log("Lecture automatique de la vidéo countdown.mp4 avec son réussie");
+                        })
+                        .catch(error => {
+                            console.error("Échec de la lecture automatique avec son : ", error);
+                            // Revenir à la lecture sans son
+                            introVideo.muted = true;
+                            introVideo.play()
+                                .then(() => {
+                                    console.log("Lecture automatique de la vidéo countdown.mp4 sans son réussie");
+                                    if (enableSoundButton) enableSoundButton.style.display = 'block';
+                                })
+                                .catch(error => {
+                                    console.error("Échec de la lecture automatique sans son : ", error);
+                                    if (enableSoundButton) enableSoundButton.style.display = 'block';
+                                });
+                        });
+
+                    introVideo.onended = () => {
+                        console.log("Vidéo countdown.mp4 terminée");
+                        startApplication();
+                    };
+
+                    introVideo.onerror = () => {
+                        console.error("Erreur de chargement de la vidéo countdown.mp4");
+                        startApplication();
+                    };
+
+                    // Délai de secours pour forcer le démarrage si la vidéo ne se termine pas
+                    setTimeout(() => {
+                        if (introVideo && !introVideo.ended) {
+                            console.warn("Délai de secours déclenché : vidéo non terminée");
+                            startApplication();
+                        }
+                    }, 30000); // 30 secondes, ajustez selon la durée de la vidéo
+                } else {
+                    console.error("Vidéo 'intro-video' non trouvée");
+                    startApplication();
+                }
+            }
+
+            // Simuler une interaction utilisateur sur mobile
+            let interactionHandled = false;
+            document.addEventListener('touchstart', function handleInteraction() {
+                if (!interactionHandled) {
+                    interactionHandled = true;
+                    console.log("Interaction utilisateur détectée, tentative de lecture vidéo");
+                    tryPlayVideo();
+                    document.removeEventListener('touchstart', handleInteraction);
+                }
+            });
+
+            // Tenter la lecture automatique immédiatement
+            tryPlayVideo();
+
+            let bandeauText = "Les policiers de la Sûreté du Québec ont obtenu une augmentation salariale allant de **26 % à 32,9 %** sur une période de six ans, selon une entente conclue avec le Conseil du Trésor. Cette augmentation inclut un rattrapage salarial et des bonifications pour améliorer leurs conditions de travail. Les termes de l'entente prennent effet rétroactivement à partir de 2022. Les infirmiers du Québec, représentés par la Fédération Interprofessionnelle de la Santé du Québec (FIQ), ont obtenu une augmentation salariale de **17,4 %** sur une période de cinq ans, selon une entente conclue en 2024. Cette augmentation inclut des primes pour périodes critiques, comme pendant les Fêtes et l'été, ainsi que des mesures pour améliorer les conditions de travail, telles que l'encadrement du temps supplémentaire obligatoire et l'élimination graduelle de la main-d'œuvre indépendante. Les employés de la Ville de Québec ont obtenu une augmentation salariale de **13 %** sur une période de cinq ans, selon les négociations conclues en 2024. Cette entente inclut des hausses progressives, avec une augmentation de **4 %** en 2024, suivie de **3 %** en 2025, et de **2 %** pour les trois années suivantes. Les employés de la construction au Québec ont obtenu des augmentations salariales progressives dans le cadre des conventions collectives négociées par la Commission de la construction du Québec (CCQ). Les pourcentages varient selon les secteurs (institutionnel, commercial, industriel, résidentiel, génie civil et voirie) et les métiers. Par exemple, des hausses annuelles de **2 % à 3 %** ont été négociées pour certains secteurs, avec des ajustements spécifiques pour les avantages sociaux et les primes. Une entente de principe concernant les employés de la construction a été rapportée dans les journaux, notamment dans *Le Devoir*. Elle prévoit des augmentations salariales progressives de **8 % en 2025**, **5 % en 2026**, **5 % en 2027**, et **4 % en 2028**. Cette entente concerne les secteurs industriel, institutionnel et commercial, et vise à préserver la paix industrielle tout en évitant des conflits de travail majeurs. Les enseignants au Québec ont obtenu des augmentations salariales allant de **17,4 % à 24 %** sur une période de cinq ans, selon une entente conclue entre le gouvernement et la Fédération des syndicats de l’enseignement (FSE-CSQ). Ces augmentations varient selon les échelons salariaux, avec des bonifications supplémentaires pour les enseignants en début de carrière. Les employés de la Société des alcools du Québec (SAQ) ont obtenu une augmentation salariale progressive dans le cadre de leur nouvelle convention collective. Selon les informations publiées, les augmentations incluent des hausses annuelles allant jusqu'à **12 % sur plusieurs années**, avec des ajustements pour les avantages sociaux et les primes. Cette entente a été adoptée par une majorité de 71 % des membres lors des assemblées générales. Les politiciens du Québec, notamment les députés, ont obtenu une augmentation salariale de **30 %** en 2023. Cette hausse a été votée par le gouvernement Legault et a suscité des débats, surtout en raison de son timing, qui coïncidait avec des négociations pour des augmentations beaucoup plus modestes dans le secteur public.";
+
+            const marqueeContent = document.querySelector('.marquee-content');
+            if (marqueeContent) {
+                marqueeContent.textContent = bandeauText;
+                marqueeContent.innerHTML += '\u00A0\u00A0' + bandeauText;
+            } else {
+                console.error("Élément .marquee-content non trouvé.");
+            }
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    window.close();
+                }
+            });
+
+            const clickSound = document.getElementById('click-sound');
+
+            function updateClock() {
+                const now = new Date();
+                let hours = now.getHours();
+                const minutes = now.getMinutes();
+                const seconds = now.getSeconds();
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+
+                const hoursTens = Math.floor(hours / 10);
+                const hoursOnes = hours % 10;
+                const minutesTens = Math.floor(minutes / 10);
+                const minutesOnes = minutes % 10;
+                const secondsTens = Math.floor(seconds / 10);
+                const secondsOnes = seconds % 10;
+
+                updateFlip('hours-tens', hoursTens);
+                updateFlip('hours-ones', hoursOnes);
+                updateFlip('minutes-tens', minutesTens);
+                updateFlip('minutes-ones', minutesOnes);
+                updateFlip('seconds-tens', secondsTens);
+                updateFlip('seconds-ones', secondsOnes);
+
+                const amPmElement = document.getElementById('am-pm');
+                if (amPmElement) {
+                    amPmElement.textContent = ampm;
+                } else {
+                    console.error("Élément 'am-pm' non trouvé.");
+                }
+
+                updateDaysCounter();
+            }
+
+            function updateFlip(unit, value) {
+                const front = document.getElementById(`${unit}-front`);
+                const back = document.getElementById(`${unit}-back`);
+                const flipCard = front ? front.parentElement : null;
+
+                if (!front || !back || !flipCard) {
+                    console.error(`Erreur: Élément manquant pour l'unité ${unit}.`);
+                    return;
+                }
+
+                if (front.textContent != value) {
+                    back.textContent = value;
+                    flipCard.classList.add('flipped');
+                    playClickSound(unit);
+
+                    setTimeout(() => {
+                        front.textContent = value;
+                        flipCard.classList.remove('flipped');
+                    }, 400);
+                }
+            }
+
+            function playClickSound(unit) {
+                if (unit.includes('minutes') || unit.includes('hours') || unit.includes('days')) {
+                    if (clickSound) {
+                        clickSound.currentTime = 0;
+                        clickSound.play().catch(error => {
+                            console.error("Erreur lors de la lecture du son de clic : ", error);
+                        });
+                    } else {
+                        console.warn("Élément audio 'click-sound' non trouvé.");
+                    }
+                }
+            }
+
+            function updateDaysCounter() {
+                const startDate = new Date('2024-01-01T00:00:00Z');
+                const now = new Date();
+                const timeDiff = now - startDate;
+                const daysPassed = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+                const hundreds = Math.floor(daysPassed / 100);
+                const tens = Math.floor((daysPassed % 100) / 10);
+                const ones = daysPassed % 10;
+
+                updateFlip('days-hundreds', hundreds);
+                updateFlip('days-tens', tens);
+                updateFlip('days-ones', ones);
+            }
+
+            function checkOrientation() {
+                const flipClock = document.querySelector('.flip-clock');
+                const daysCounter = document.querySelector('.days-counter');
+                const warning = document.querySelector('.portrait-warning');
+                const introVideo = document.getElementById('intro-video');
+                const enableSoundButton = document.getElementById('enable-sound-button');
+
+                if (window.innerHeight > window.innerWidth) {
+                    if (flipClock) flipClock.style.display = 'none';
+                    if (daysCounter) daysCounter.style.display = 'none';
+                    if (introVideo) introVideo.style.display = 'none';
+                    if (enableSoundButton) enableSoundButton.style.display = 'none';
+                    if (warning) warning.style.display = 'flex';
+                } else {
+                    if (warning) warning.style.display = 'none';
+                    if (introVideo && !introVideo.ended) {
+                        introVideo.style.display = 'block';
+                        introVideo.play().catch(() => {
+                            if (enableSoundButton) enableSoundButton.style.display = 'block';
+                        });
+                    } else {
+                        if (flipClock) flipClock.style.display = 'flex';
+                        if (daysCounter) daysCounter.style.display = 'flex';
+                    }
+                }
+            }
+
+            window.addEventListener('resize', checkOrientation);
+            window.addEventListener('load', checkOrientation);
+        });
+    </script>
+</body>
+</html>
